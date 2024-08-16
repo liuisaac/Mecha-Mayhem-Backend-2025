@@ -24,6 +24,8 @@ const indexRouter = require('./routes/index');
 const usersRouter = require('./routes/users');
 const photosRouter = require('./routes/photos');
 const awardsRouter = require('./routes/awards');
+const teamsRouter = require('./routes/teams');
+const matchRouter = require('./routes/matches');
 
 
 app.use(logger('dev'));
@@ -37,6 +39,8 @@ app.use('/', indexRouter);
 app.use('/users', usersRouter);
 app.use('/photos', photosRouter);
 app.use('/awards', awardsRouter);
+app.use('/teams', teamsRouter);
+app.use('/matches', matchRouter)
 
 module.exports = app;
 
