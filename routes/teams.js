@@ -16,12 +16,6 @@ router.get("/:teamNumber/:grade/:year", async (req, res) => {
         2024: 51496,
     };
 
-    const divToKeyMap = {
-        prairies: 1,
-        rockies: 2,
-        finals: 100,
-    };
-
     const gradeToKeyMap = {
         MS: "&grade%5B%5D=Middle%20School&myTeams=false",
         HS: "&grade%5B%5D=High%20School&myTeams=false",
@@ -55,7 +49,7 @@ router.get("/:teamNumber/:grade/:year", async (req, res) => {
                 const transformedMatches = await transformMatches(
                     matches,
                     year,
-                    divToKeyMap[team_div]
+                    team_div
                 );
 
                 const rankingRes = await axios.get(
