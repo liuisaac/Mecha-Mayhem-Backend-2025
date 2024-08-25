@@ -1,6 +1,6 @@
 const apiKey = process.env.ROBOTEVENTS_API_KEY;
 const admin = require("firebase-admin");
-const { db } = require("../config/firebaseConfig");
+const { db } = require("../../config/firebaseConfig");
 const { default: axios } = require("axios");
 
 async function getTeamInfo(teamId, year) {

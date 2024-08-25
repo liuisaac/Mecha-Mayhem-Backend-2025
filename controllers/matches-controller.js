@@ -1,36 +1,19 @@
-const express = require("express");
-const router = express.Router();
 const axios = require("axios");
 const admin = require("firebase-admin");
 const { db } = require("../config/firebaseConfig");
 const { transformMatches } = require("../util/transformers/transformMatches");
+const { calcMatch } = require("../util/calc/calcMatch");
+const { yearToKeyMap, divToKeyMap, roundToKeyMap } = require("../util/maps");
 
 const overwriteCachedData = false;
 const apiKey = process.env.ROBOTEVENTS_API_KEY;
 
 // Route to retrieve awards by the year
-router.get("/:year/:division/:round/:matchNum", async (req, res) => {
+const getMatch = async (req, res) => {
     const year = req.params.year;
     const div = req.params.division;
     const round = req.params.round;
     const matchNum = req.params.matchNum;
-
-    const yearToKeyMap = {
-        2023: 47800,
-        2024: 51496,
-    };
-
-    const divToKeyMap = {
-        prairies: 1,
-        rockies: 2,
-        finals: 100,
-    };
-
-    const roundToKeyMap = {
-        practice: "round%5B%5D=1",
-        qualification: "round%5B%5D=2",
-        eliminations: "round%5B%5D=3&round%5B%5D=4&round%5B%5D=5&round%5B%5D=6",
-    };
 
     let matchNumKey = `&matchnum%5B%5D=${matchNum}`;
 
@@ -56,7 +39,22 @@ router.get("/:year/:division/:round/:matchNum", async (req, res) => {
         if (doc.exists && !overwriteCachedData) {
             // Return cached data
             console.log("Returning cached match data");
-            return res.json(doc.data().matches);
+            const matches = doc.data().matches;
+            try {
+                console.log("a: ", matches[0].redAlliance[0].number);
+                const matchString = `${matches[0].redAlliance[0].number}, 
+                                    ${matches[0].redAlliance[1].number}, 
+                                    ${matches[0].redScore}, 
+                                    0, 
+                                    ${matches[0].blueAlliance[0].number}, 
+                                    ${matches[0].blueAlliance[1].number}, 
+                                    ${matches[0].blueScore}, 
+                                    0`;
+                calcMatch(year, div, matchString);
+            } catch (error) {
+                console.log("No more qual match data")
+            }
+            return res.json(matches);
         }
 
         // Request from RobotEvents API
@@ -79,6 +77,10 @@ router.get("/:year/:division/:round/:matchNum", async (req, res) => {
             timestamp: admin.firestore.FieldValue.serverTimestamp(),
         });
 
+        // // sotre data for later CCWM-related calculations
+        // const matchString = `${transformedMatches.redAlliance[0]}, ${transformedMatches.redAlliance[1]}, ${transformedMatches.redScore}, 0, ${transformedMatches.blueAlliance[0]}, ${transformedMatches.blueAlliance[1]}, ${transformedMatches.blueScore}, 0`
+        // calcMatch(year, div, matchString);
+
         res.json(transformedMatches);
     } catch (error) {
         console.error("Error fetching matches", error);
@@ -100,6 +102,6 @@ router.get("/:year/:division/:round/:matchNum", async (req, res) => {
 
         res.status(500).json({ error: "Failed to fetch matches" });
     }
-});
+};
 
-module.exports = router;
+module.exports = { getMatch };

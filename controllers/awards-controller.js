@@ -1,11 +1,8 @@
 const axios = require("axios");
-const express = require("express");
-const router = express.Router();
-
 const admin = require("firebase-admin");
 const { db } = require("../config/firebaseConfig");
-const { getTeamInfo } = require("../util/getTeamInfo");
-
+const { getTeamInfo } = require("../util/req/getTeamInfo");
+const { yearToKeyMap } = require("../util/maps");
 const overwriteCachedData = true;
 
 const apiKey = process.env.ROBOTEVENTS_API_KEY;
@@ -29,14 +26,8 @@ async function transformAwards(awards, year) {
     return transformedAwards.flat();
 }
 
-// Route to retrieve awards by the year
-router.get("/:year", async (req, res) => {
+const getAwardsByYear = async (req, res) => {
     const year = req.params.year;
-
-    const yearToKeyMap = {
-        2023: 47800,
-        2024: 51496,
-    };
 
     try {
         // Check if exists in FireStore Cache
@@ -74,6 +65,6 @@ router.get("/:year", async (req, res) => {
         console.error("Error fetching awards:", error);
         res.status(500).json({ error: "Failed to fetch awards" });
     }
-});
+}
 
-module.exports = router;
+module.exports = { getAwardsByYear }

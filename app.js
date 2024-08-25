@@ -20,12 +20,12 @@ const cookieParser = require('cookie-parser');
 const logger = require('morgan');
 
 // ROUTERS
-const indexRouter = require('./routes/index');
-const usersRouter = require('./routes/users');
-const photosRouter = require('./routes/photos');
-const awardsRouter = require('./routes/awards');
-const teamsRouter = require('./routes/teams');
-const matchRouter = require('./routes/matches');
+const indexRouter = require('./views/index');
+const usersRouter = require('./views/users');
+const photosRouter = require('./views/photos-router');
+const awardsRouter = require('./views/awards-router');
+const teamsRouter = require('./views/teams-router');
+const matchRouter = require('./views/matches-router');
 
 
 app.use(logger('dev'));

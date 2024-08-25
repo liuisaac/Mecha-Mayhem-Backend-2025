@@ -1,26 +1,18 @@
-const express = require("express");
-const router = express.Router();
 const { transformMatches } = require("../util/transformers/transformMatches");
 const { default: axios } = require("axios");
+const { calcOPR } = require("../util/calc/OPR/calcOPR");
+const admin = require("firebase-admin");
+const { db } = require("../config/firebaseConfig");
+const { concPagination } = require("../util/req/concPagination");
+const { yearToKeyMap, gradeToKeyMap } = require("../util/maps");
 
 const apiKey = process.env.ROBOTEVENTS_API_KEY;
 
 // route to retrieve team information for a season
-router.get("/:teamNumber/:grade/:year", async (req, res) => {
+const getInfo = async (req, res) => {
     const teamNumber = req.params.teamNumber;
     const grade = req.params.grade;
     const year = req.params.year;
-
-    const yearToKeyMap = {
-        2023: 47800,
-        2024: 51496,
-    };
-
-    const gradeToKeyMap = {
-        MS: "&grade%5B%5D=Middle%20School&myTeams=false",
-        HS: "&grade%5B%5D=High%20School&myTeams=false",
-        UNI: "&grade%5B%5D=College&myTeams=false",
-    };
 
     // construct the URL based on the team number, grade, and year
     try {
@@ -97,6 +89,67 @@ router.get("/:teamNumber/:grade/:year", async (req, res) => {
         console.log(error);
         res.status(500).json({ error: "Internal Server Error" });
     }
-});
+};
 
-module.exports = router;
+// retrieve a teams OPR for a season
+const getOPR = async (req, res) => {
+    const teamNumber = req.params.teamNumber;
+    const year = req.params.year;
+    const div = req.params.division;
+
+    const yearToKeyMap = {
+        2023: 47800,
+        2024: 51496,
+    };
+
+    const divToKeyMap = {
+        prairies: 1,
+        rockies: 2,
+        finals: 100,
+    };
+
+    const gradeToKeyMap = {
+        MS: "&grade%5B%5D=Middle%20School&myTeams=false",
+        HS: "&grade%5B%5D=High%20School&myTeams=false",
+        UNI: "&grade%5B%5D=College&myTeams=false",
+    };
+
+    // construct the URL based on the team number, grade, and year
+    try {
+        res.json(await concPagination(`https://www.robotevents.com/api/v2/events/${yearToKeyMap[year]}/divisions/${divToKeyMap[div]}/rankings`));
+        // const url = `https://www.robotevents.com/api/v2/events/${yearToKeyMap[year]}/divisions/${divToKeyMap[div]}/rankings`;
+        // const response = await axios.get(url, {
+        //     headers: {
+        //         Authorization: `Bearer ${apiKey}`,
+        //     },
+        // });
+
+        // // console.log(response.data.data)
+        // if (response.data.data !== undefined) {
+        //     // getting list of teams in a div to calculate OPR
+        //     const teamNames = response.data.data.map(
+        //         (entry) => entry.team.name
+        //     );
+        //     console.log(teamNames);
+
+        //     //fetching list of stringified matches
+        //     const matchesRef = db
+        //         .collection("calc")
+        //         .doc("2024")
+        //         .collection("prairies")
+        //         .doc("matches");
+        //     const doc = await matchesRef.get();
+        //     console.log(doc.data());
+
+        //     calcOPR(doc.data().matches, teamNames);
+        //     res.json({ error: "calced OPR" });
+        // } else {
+        //     res.status(404).json({ error: "Event and Div not found" });
+        // }
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+};
+
+module.exports = { getInfo, getOPR };

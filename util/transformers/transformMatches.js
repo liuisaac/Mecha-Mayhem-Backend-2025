@@ -1,4 +1,4 @@
-const { getTeamInfo } = require("../getTeamInfo")
+const { getTeamInfo } = require("../req/getTeamInfo");
 
 // function that transforms raw match data to structured output
 async function transformMatches(matches, year, division) {

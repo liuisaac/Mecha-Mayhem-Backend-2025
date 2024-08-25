@@ -1,13 +1,10 @@
-const express = require("express");
-const router = express.Router();
 const admin = require("firebase-admin");
 const sharp = require("sharp");
-const heicConvert = require("heic-convert");
 
 const bucket = admin.storage().bucket();
 
 // Route to retrieve an image by filename
-router.get("/gallery/:filename", async (req, res) => {
+const getPhoto = async (req, res) => {
     const filename = req.params.filename;
 
     try {
@@ -41,9 +38,9 @@ router.get("/gallery/:filename", async (req, res) => {
         console.error("Error fetching image:", error);
         res.status(500).json({ error: "Failed to fetch image" });
     }
-});
+};
 
-router.get("/gallery", async (req, res) => {
+const getGallery = async (req, res) => {
     const folderName = "gallery"; // Replace with your folder name in Firebase Storage
 
     try {
@@ -65,6 +62,6 @@ router.get("/gallery", async (req, res) => {
         console.error("Error fetching images:", error);
         res.status(500).json({ error: "Failed to fetch images" });
     }
-});
+};
 
-module.exports = router;
+module.exports = { getPhoto, getGallery};
