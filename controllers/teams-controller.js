@@ -1,12 +1,10 @@
 const { transformMatches } = require("../util/transformers/transformMatches");
-const { default: axios } = require("axios");
 const { calcOPR } = require("../util/calc/OPR/calcOPR");
 const admin = require("firebase-admin");
 const { db } = require("../config/firebaseConfig");
 const { concPagination } = require("../util/req/concPagination");
-const { yearToKeyMap, gradeToKeyMap } = require("../util/maps");
+const { yearToKeyMap, gradeToKeyMap, divToKeyMap } = require("../util/maps");
 
-const apiKey = process.env.ROBOTEVENTS_API_KEY;
 
 // route to retrieve team information for a season
 const getInfo = async (req, res) => {
@@ -16,27 +14,21 @@ const getInfo = async (req, res) => {
 
     // construct the URL based on the team number, grade, and year
     try {
-        const url = `https://www.robotevents.com/api/v2/teams?number%5B%5D=${teamNumber}${gradeToKeyMap[grade]}`;
-        const response = await axios.get(url, {
-            headers: {
-                Authorization: `Bearer ${apiKey}`,
-            },
-        });
+        const response = requestRobotEvents(
+            `https://www.robotevents.com/api/v2/teams?number%5B%5D=${teamNumber}${gradeToKeyMap[grade]}`
+        );
+        const data = response.data.data[0];
 
-        if (response.data.data[0] !== undefined) {
-            const team_id = response.data.data[0].id;
-            const team_name = response.data.data[0].team_name;
-            const matchRes = await axios.get(
-                `https://www.robotevents.com/api/v2/teams/${team_id}/matches?event%5B%5D=${yearToKeyMap[year]}`,
-                {
-                    headers: {
-                        Authorization: `Bearer ${apiKey}`,
-                    },
-                }
+        if (data !== undefined) {
+            const team_id = data.id;
+            const team_name = data.team_name;
+
+            const matchRes = requestRobotEvents(
+                `https://www.robotevents.com/api/v2/teams/${team_id}/matches?event%5B%5D=${yearToKeyMap[year]}`
             );
-            if (matchRes.data.data[0] !== undefined) {
-                const team_div =
-                    matchRes.data.data[0].division.name.toLowerCase();
+            const matchData = matchRes.data.data[0];
+            if (matchData !== undefined) {
+                const team_div = matchData.division.name.toLowerCase();
                 const matches = matchRes.data.data;
                 const transformedMatches = await transformMatches(
                     matches,
@@ -44,25 +36,21 @@ const getInfo = async (req, res) => {
                     team_div
                 );
 
-                const rankingRes = await axios.get(
-                    `https://www.robotevents.com/api/v2/teams/${team_id}/rankings?event%5B%5D=${yearToKeyMap[year]}`,
-                    {
-                        headers: {
-                            Authorization: `Bearer ${apiKey}`,
-                        },
-                    }
+                const rankingRes = requestRobotEvents(
+                    `https://www.robotevents.com/api/v2/teams/${team_id}/rankings?event%5B%5D=${yearToKeyMap[year]}`
                 );
+                const rankData = rankingRes.data.data[0]
 
-                const rank = rankingRes.data.data[0].rank;
-                const wins = rankingRes.data.data[0].wins;
-                const losses = rankingRes.data.data[0].losses;
-                const ties = rankingRes.data.data[0].ties;
-                const wp = rankingRes.data.data[0].wp;
-                const ap = rankingRes.data.data[0].ap;
-                const sp = rankingRes.data.data[0].sp;
-                const high = rankingRes.data.data[0].high_score;
-                const avg = rankingRes.data.data[0].average_points;
-                const total = rankingRes.data.data[0].total_points;
+                const rank = rankData.rank;
+                const wins = rankData.wins;
+                const losses = rankData.losses;
+                const ties = rankData.ties;
+                const wp = rankData.wp;
+                const ap = rankData.ap;
+                const sp = rankData.sp;
+                const high = rankData.high_score;
+                const avg = rankData.average_points;
+                const total = rankData.total_points;
 
                 res.json({
                     team_number: teamNumber,
@@ -97,26 +85,13 @@ const getOPR = async (req, res) => {
     const year = req.params.year;
     const div = req.params.division;
 
-    const yearToKeyMap = {
-        2023: 47800,
-        2024: 51496,
-    };
-
-    const divToKeyMap = {
-        prairies: 1,
-        rockies: 2,
-        finals: 100,
-    };
-
-    const gradeToKeyMap = {
-        MS: "&grade%5B%5D=Middle%20School&myTeams=false",
-        HS: "&grade%5B%5D=High%20School&myTeams=false",
-        UNI: "&grade%5B%5D=College&myTeams=false",
-    };
-
     // construct the URL based on the team number, grade, and year
     try {
-        res.json(await concPagination(`https://www.robotevents.com/api/v2/events/${yearToKeyMap[year]}/divisions/${divToKeyMap[div]}/rankings`));
+        res.json(
+            await concPagination(
+                `https://www.robotevents.com/api/v2/events/${yearToKeyMap[year]}/divisions/${divToKeyMap[div]}/rankings`
+            )
+        );
         // const url = `https://www.robotevents.com/api/v2/events/${yearToKeyMap[year]}/divisions/${divToKeyMap[div]}/rankings`;
         // const response = await axios.get(url, {
         //     headers: {

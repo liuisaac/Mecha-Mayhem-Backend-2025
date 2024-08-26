@@ -22,7 +22,7 @@ async function getTeamInfo(teamId, year) {
         }
 
         if (teamData) {
-            console.log("Returning cached team data: ", teamId);
+            // console.log("Returning cached team data: ", teamId);
             return teamData; // return cached team data if found
         } else {
             // if not found in cache, fetch new team data from API

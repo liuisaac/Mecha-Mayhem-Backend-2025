@@ -1,11 +1,9 @@
-const axios = require("axios");
 const admin = require("firebase-admin");
 const { db } = require("../config/firebaseConfig");
 const { getTeamInfo } = require("../util/req/getTeamInfo");
 const { yearToKeyMap } = require("../util/maps");
+const { requestRobotEvents } = require("../util/req/requestRobotEvents");
 const overwriteCachedData = true;
-
-const apiKey = process.env.ROBOTEVENTS_API_KEY;
 
 async function transformAwards(awards, year) {
     const transformedAwardsPromises = awards.map(async (award) => {
@@ -41,14 +39,7 @@ const getAwardsByYear = async (req, res) => {
         } else {
             // Request from RobotEvents API and cache
             console.log("Fetching new awards data from API");
-            const response = await axios.get(
-                `https://www.robotevents.com/api/v2/events/${yearToKeyMap[year]}/awards`,
-                {
-                    headers: {
-                        Authorization: `Bearer ${apiKey}`,
-                    },
-                }
-            );
+            const response = requestRobotEvents(`https://www.robotevents.com/api/v2/events/${yearToKeyMap[year]}/awards`);
 
             const awards = response.data.data;
             const transformedAwards = await transformAwards(awards, year);
