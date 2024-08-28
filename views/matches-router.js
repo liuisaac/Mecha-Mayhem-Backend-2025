@@ -3,6 +3,6 @@ const { getAllMatches, getNextMatches } = require("../controllers/matches-contro
 const router = express.Router();
 
 // Route to retrieve awards by the year
-router.get("/:year/:division/", getAllMatches);
+router.get("/:year/:division?", getAllMatches);
 
 module.exports = router;

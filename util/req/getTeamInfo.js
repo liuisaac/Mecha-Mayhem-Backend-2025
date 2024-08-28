@@ -2,80 +2,59 @@ const apiKey = process.env.ROBOTEVENTS_API_KEY;
 const admin = require("firebase-admin");
 const { db } = require("../../config/firebaseConfig");
 const { default: axios } = require("axios");
+const { concPagination } = require("./concPagination");
+const { yearToKeyMap } = require("../maps");
+const { transformTeams } = require("../transformers/transformTeams");
 
-async function getTeamInfo(teamId, year) {
+let teamCache = {}; // In-memory cache to minimize database calls
+let cacheTimestamp = null;
+const CACHE_DURATION = 1000 * 30 ; // 30 seconds
+
+async function populateCache() {
     try {
-        // check firestore cache for cached team data
-        const teamRef = db.collection("teams").doc(year);
-        const doc = await teamRef.get();
-
-        let teamData = null;
-
-        if (doc.exists) {
-            const teams = doc.data().teams;
-            if (Array.isArray(teams)) {
-                // find team document via linear search of team number
-                teamData = teams.find((team) => team.id === teamId);
-            } else {
-                console.error("Cached teams data is not an array", teams);
+        for (const year of Object.keys(yearToKeyMap)) {
+            if (!teamCache[year]) {
+                console.log(`Fetching data for year ${year}...`);
+                teamCache[year] = await getAllTeamsData(year);
             }
         }
-
-        if (teamData) {
-            // console.log("Returning cached team data: ", teamId);
-            return teamData; // return cached team data if found
-        } else {
-            // if not found in cache, fetch new team data from API
-            console.log("Fetching new team data: ", teamId);
-
-            // making robotevents api request
-            const response = await axios.get(
-                `https://www.robotevents.com/api/v2/teams/${teamId}`,
-                {
-                    headers: {
-                        Authorization: `Bearer ${apiKey}`,
-                    },
-                }
-            );
-            const teamInfo = response.data;
-
-            // format team data
-            teamData = {
-                id: teamId,
-                number: teamInfo.number,
-                name: teamInfo.team_name || "Unknown",
-                affiliation: teamInfo.organization || "Unknown",
-                location:
-                    teamInfo.location.city && teamInfo.location.region
-                        ? `${teamInfo.location.city}, ${teamInfo.location.region}`
-                        : "Unknown",
-            };
-
-            // save team data to firestore db
-            await db
-                .collection("teams")
-                .doc(year)
-                .set(
-                    {
-                        teams: admin.firestore.FieldValue.arrayUnion(teamData),
-                        timestamp: admin.firestore.FieldValue.serverTimestamp(),
-                    },
-                    { merge: true }
-                );
-
-            return teamData;
-        }
+        cacheTimestamp = Date.now();
+        console.log("Cache fully populated.");
     } catch (error) {
-        console.error("Error fetching team info from API", error);
-        // check if the error is a 419 (Too Many Requests) and if we can retry
-        // robotevents api is a pain in the ass
-        if (error.response && error.response.status === 419) {
-            console.log(
-                "419 (Too many requests). Likely RobotEvents API Request Limiter. Wait ~5 minutes and try again"
-            );
-        }
-        return null; // Return null for failed requests
+        console.error("Error populating cache", error);
     }
 }
 
-module.exports = { getTeamInfo };
+async function getTeamInfo(teamNumber, year) {
+    try {
+        // Refresh cache if it's stale or empty
+        if (!cacheTimestamp || Date.now() - cacheTimestamp > CACHE_DURATION) {
+            console.log("Cache is stale or empty, populating...");
+            await populateCache();
+        }
+
+        // Return data from cache if available
+        console.log(teamCache[year][teamNumber], teamNumber);
+        if (teamCache[year] && teamCache[year][teamNumber]) {
+            return teamCache[year][teamNumber];
+        } else {
+            console.log("Team not found in cache");
+            return null;
+        }
+    } catch (error) {
+        console.error("Error fetching team info from cache", error);
+    }
+}
+
+async function getAllTeamsData(year) {
+    try {
+        const teamData = await concPagination(
+            `https://www.robotevents.com/api/v2/events/${yearToKeyMap[year]}/teams?myTeams=false`
+        );
+        return transformTeams(teamData);
+    } catch (error) {
+        console.error("Error fetching all teams data from API", error);
+    }
+}
+
+module.exports = { getTeamInfo, getAllTeamsData };

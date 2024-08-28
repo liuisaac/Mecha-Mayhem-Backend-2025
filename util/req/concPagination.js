@@ -4,7 +4,6 @@ const { requestRobotEvents } = require("./requestRobotEvents");
 async function concPagination(url) {
     try {
         if (url !== null) {
-            console.log(url);
             const response = await requestRobotEvents(url);
             const resMeta = response.data.meta;
             const resData = response.data.data;
@@ -19,7 +18,7 @@ async function concPagination(url) {
             }
         }
     } catch (error) {
-        console.error("Error fetching info from API:");
+        console.error("Error fetching info from API");
     }
 }
 

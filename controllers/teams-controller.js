@@ -4,6 +4,7 @@ const admin = require("firebase-admin");
 const { db } = require("../config/firebaseConfig");
 const { concPagination } = require("../util/req/concPagination");
 const { yearToKeyMap, gradeToKeyMap, divToKeyMap } = require("../util/maps");
+const { getAllTeamsData, getTeamInfo } = require("../util/req/getTeamInfo");
 
 
 // route to retrieve team information for a season
@@ -79,6 +80,33 @@ const getInfo = async (req, res) => {
     }
 };
 
+// route to retrieve team information for a season
+const getAllTeams = async (req, res) => {
+    const year = req.params.year;
+
+    try {
+        res.json(await getAllTeamsData(year));
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+};
+
+
+// route to retrieve team information for a season
+const getOneTeam = async (req, res) => {
+    const number = String(req.params.number);
+    const year = String(req.params.year);
+
+    try {
+        res.json(await getTeamInfo(number, year));
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+};
+
+
 // retrieve a teams OPR for a season
 const getOPR = async (req, res) => {
     const teamNumber = req.params.teamNumber;
@@ -127,4 +155,4 @@ const getOPR = async (req, res) => {
     }
 };
 
-module.exports = { getInfo, getOPR };
+module.exports = { getInfo, getAllTeams, getOneTeam, getOPR };

@@ -1,13 +1,13 @@
 const { getTeamInfo } = require("../req/getTeamInfo");
 
 // function that transforms raw match data to structured output
-async function transformMatches(matches, year, division) {
+const transformMatches = async (matches, year, division) => {
     const transformedMatchesPromises = matches.map(async (match) => {
         if (match !== undefined) {
             const redAlliancePromises = match.alliances[1].teams.map(
                 async (team) => {
                     try {
-                        const teamInfo = await getTeamInfo(team.team.id, year);
+                        const teamInfo = await getTeamInfo(team.team.name, year);
                         return { number: teamInfo.number, name: teamInfo.name };
                     } catch (error) {
                         return null;
@@ -17,7 +17,7 @@ async function transformMatches(matches, year, division) {
 
             const blueAlliancePromises = match.alliances[0].teams.map(
                 async (team) => {
-                    const teamInfo = await getTeamInfo(team.team.id, year);
+                    const teamInfo = await getTeamInfo(team.team.name, year);
                     return { number: teamInfo.number, name: teamInfo.name };
                 }
             );
@@ -51,6 +51,6 @@ async function transformMatches(matches, year, division) {
 
     const transformedMatches = await Promise.all(transformedMatchesPromises);
     return transformedMatches;
-}
+};
 
 module.exports = { transformMatches };
