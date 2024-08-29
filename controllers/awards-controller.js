@@ -1,28 +1,9 @@
 const admin = require("firebase-admin");
 const { db } = require("../config/firebaseConfig");
-const { getTeamInfo } = require("../util/req/getTeamInfo");
 const { yearToKeyMap } = require("../util/maps");
 const { requestRobotEvents } = require("../util/req/requestRobotEvents");
-const overwriteCachedData = true;
-
-async function transformAwards(awards, year) {
-    const transformedAwardsPromises = awards.map(async (award) => {
-        const teamInfoPromises = award.teamWinners.map(async (teamWinner) => {
-            const teamInfo = await getTeamInfo(teamWinner.team.id, year);
-            return {
-                award: award.title.replace(/\s*\(.*?\)/, ""),
-                team: teamInfo.number,
-                name: teamInfo.name,
-                affiliation: teamInfo.affiliation,
-                location: teamInfo.location,
-            };
-        });
-        return Promise.all(teamInfoPromises);
-    });
-
-    const transformedAwards = await Promise.all(transformedAwardsPromises);
-    return transformedAwards.flat();
-}
+const { transformAwards } = require("../util/transformers/transformAwards");
+const overwriteCachedData = false;
 
 const getAwardsByYear = async (req, res) => {
     const year = req.params.year;
@@ -39,8 +20,9 @@ const getAwardsByYear = async (req, res) => {
         } else {
             // Request from RobotEvents API and cache
             console.log("Fetching new awards data from API");
-            const response = requestRobotEvents(`https://www.robotevents.com/api/v2/events/${yearToKeyMap[year]}/awards`);
+            const response = await requestRobotEvents(`https://www.robotevents.com/api/v2/events/${yearToKeyMap[year]}/awards`);
 
+            console.log(response);
             const awards = response.data.data;
             const transformedAwards = await transformAwards(awards, year);
 

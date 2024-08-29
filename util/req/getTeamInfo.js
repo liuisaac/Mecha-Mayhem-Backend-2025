@@ -8,10 +8,16 @@ const { transformTeams } = require("../transformers/transformTeams");
 
 let teamCache = {}; // In-memory cache to minimize database calls
 let cacheTimestamp = null;
-const CACHE_DURATION = 1000 * 30 ; // 30 seconds
+const CACHE_DURATION = 1000 * 60 * 60 ; // 1 hour
 
 async function populateCache() {
+    if (cacheTimestamp && Date.now() - cacheTimestamp <= CACHE_DURATION) {
+        console.log("Cache is already populated and fresh.");
+        return;
+    }
+
     try {
+        console.log("Populating cache...");
         for (const year of Object.keys(yearToKeyMap)) {
             if (!teamCache[year]) {
                 console.log(`Fetching data for year ${year}...`);
@@ -25,6 +31,7 @@ async function populateCache() {
     }
 }
 
+
 async function getTeamInfo(teamNumber, year) {
     try {
         // Refresh cache if it's stale or empty
@@ -34,7 +41,6 @@ async function getTeamInfo(teamNumber, year) {
         }
 
         // Return data from cache if available
-        console.log(teamCache[year][teamNumber], teamNumber);
         if (teamCache[year] && teamCache[year][teamNumber]) {
             return teamCache[year][teamNumber];
         } else {

@@ -116,9 +116,9 @@ const getOPR = async (req, res) => {
     // construct the URL based on the team number, grade, and year
     try {
         res.json(
-            await concPagination(
-                `https://www.robotevents.com/api/v2/events/${yearToKeyMap[year]}/divisions/${divToKeyMap[div]}/rankings`
-            )
+            // await concPagination(
+            //     `https://www.robotevents.com/api/v2/events/${yearToKeyMap[year]}/divisions/${divToKeyMap[div]}/rankings`
+            // )
         );
         // const url = `https://www.robotevents.com/api/v2/events/${yearToKeyMap[year]}/divisions/${divToKeyMap[div]}/rankings`;
         // const response = await axios.get(url, {

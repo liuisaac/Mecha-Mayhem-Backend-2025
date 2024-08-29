@@ -1,24 +1,29 @@
+const { removeDuplicates } = require("../transformers/removeDuplicates");
 const { requestRobotEvents } = require("./requestRobotEvents");
 
-// recursively concatenates paginated API results
+// recursively concatenates paginated API results and removes duplicates
 async function concPagination(url) {
     try {
         if (url !== null) {
             const response = await requestRobotEvents(url);
             const resMeta = response.data.meta;
             const resData = response.data.data;
-    
-            // base case
-            if (resMeta.last_page_url == url) {
-                return resData;
-            } else {
-                const concatenatedData = resData.concat(await concPagination(resMeta.next_page_url));
-                // console.log(concatenatedData.length);
-                return concatenatedData;
-            }
+
+            // Recursive call to fetch and concatenate the rest of the pages
+            let concatenatedData = resData.concat(
+                await concPagination(resMeta.next_page_url)
+            );
+            // Filter out undefined values
+            concatenatedData = concatenatedData.filter(
+                (item) => item !== undefined
+            );
+            // Remove duplicates from concatenated data
+            concatenatedData = removeDuplicates(concatenatedData);
+
+            return concatenatedData;
         }
     } catch (error) {
-        console.error("Error fetching info from API");
+        console.error("Error fetching info from API:", error);
     }
 }
 

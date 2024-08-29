@@ -3,7 +3,7 @@ const { getTeamInfo } = require("../req/getTeamInfo");
 // function that transforms raw match data to structured output
 const transformMatches = async (matches, year, division) => {
     const transformedMatchesPromises = matches.map(async (match) => {
-        if (match !== undefined) {
+        if (match !== undefined && match !== null) {
             const redAlliancePromises = match.alliances[1].teams.map(
                 async (team) => {
                     try {
