@@ -63,16 +63,3 @@ const PORT = process.env.DEV_PORT;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server is running on port ${PORT}`);
 });
-
-const fs = require('fs');
-const https = require('https');
-const express = require('express');
-
-const options = {
-  key: fs.readFileSync('/path/to/your/private-key.pem'),
-  cert: fs.readFileSync('/path/to/your/certificate.pem'),
-};
-
-https.createServer(options, app).listen(443, () => {
-  console.log('HTTPS server running on port 443');
-});
