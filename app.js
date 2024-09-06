@@ -4,16 +4,26 @@ const dotenv = require('dotenv');
 dotenv.config({ path: './.env' });
 
 // FIREBASE INIT
-
 const { db } = require('./config/firebaseConfig');
 
+const allowedOrigins = [
+  'https://mecha-mayhem-frontend-1crs5fdcj-isaacs-projects-0e7865f8.vercel.app',
+  'http://localhost:3000'
+];
 
 // CORS
 const cors = require('cors');
 app.use(cors({
-  origin: 'http://localhost:3000'
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps, curl, etc.)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) === -1) {
+      const msg = `The CORS policy for this site does not allow access from the specified Origin: ${origin}`;
+      return callback(new Error(msg), false);
+    }
+    return callback(null, true);
+  }
 }));
-
 
 const path = require('path');
 const cookieParser = require('cookie-parser');
@@ -47,4 +57,17 @@ module.exports = app;
 const PORT = process.env.DEV_PORT;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server is running on port ${PORT}`);
+});
+
+const fs = require('fs');
+const https = require('https');
+const express = require('express');
+
+const options = {
+  key: fs.readFileSync('/path/to/your/private-key.pem'),
+  cert: fs.readFileSync('/path/to/your/certificate.pem'),
+};
+
+https.createServer(options, app).listen(443, () => {
+  console.log('HTTPS server running on port 443');
 });
