@@ -52,7 +52,7 @@ const getGallery = async (req, res) => {
 
         const urls = files.map((file) => {
             return {
-                url: `http://localhost:8080/photos/${file.name}`,
+                url: `https://mecha-mayhem-frontend.vercel.app/api/photos/${file.name}`,
                 // Optionally, you can include other metadata here
             };
         });
