@@ -1,3 +1,5 @@
+const fs = require("fs").promises; // Using fs.promises for async file operations
+const path = require("path");
 const apiKey = process.env.ROBOTEVENTS_API_KEY;
 const admin = require("firebase-admin");
 const { db } = require("../../config/firebaseConfig");
@@ -6,42 +8,64 @@ const { concPagination } = require("./concPagination");
 const { yearToKeyMap } = require("../maps");
 const { transformTeams } = require("../transformers/transformTeams");
 
-let teamCache = {}; // In-memory cache to minimize database calls
-let cacheTimestamp = null;
-const CACHE_DURATION = 1000 * 60 * 60 ; // 1 hour
+const CACHE_FILE_PATH = path.join(__dirname, "teamCache.json"); // Path to the cache file
+const CACHE_DURATION = 1000 * 60 * 60; // 1 hour
+
+async function loadCache() {
+    try {
+        const data = await fs.readFile(CACHE_FILE_PATH, "utf8");
+        const { timestamp, teams } = JSON.parse(data);
+        if (Date.now() - timestamp <= CACHE_DURATION) {
+            console.log("Loaded cache from file.");
+            return teams;
+        } else {
+            console.log("Cache is stale.");
+            return null;
+        }
+    } catch (error) {
+        console.error("Error loading cache from file:", error);
+        return null;
+    }
+}
+
+async function saveCache(teams) {
+    const cacheData = {
+        timestamp: Date.now(),
+        teams,
+    };
+    try {
+        await fs.writeFile(CACHE_FILE_PATH, JSON.stringify(cacheData), "utf8");
+        console.log("Cache saved to file.");
+    } catch (error) {
+        console.error("Error saving cache to file:", error);
+    }
+}
 
 async function populateCache() {
-    if (cacheTimestamp && Date.now() - cacheTimestamp <= CACHE_DURATION) {
-        console.log("Cache is already populated and fresh.");
-        return;
-    }
-
+    const teams = {};
+    console.log("Populating cache...");
     try {
-        console.log("Populating cache...");
         for (const year of Object.keys(yearToKeyMap)) {
-            if (!teamCache[year]) {
-                console.log(`Fetching data for year ${year}...`);
-                teamCache[year] = await getAllTeamsData(year);
-            }
+            console.log(`Fetching data for year ${year}...`);
+            teams[year] = await getAllTeamsData(year);
         }
-        cacheTimestamp = Date.now();
-        console.log("Cache fully populated.");
+        await saveCache(teams); // Save populated cache to file
     } catch (error) {
         console.error("Error populating cache", error);
     }
 }
 
-
 async function getTeamInfo(teamNumber, year) {
     try {
-        // Refresh cache if it's stale or empty
-        if (!cacheTimestamp || Date.now() - cacheTimestamp > CACHE_DURATION) {
-            console.log("Cache is stale or empty, populating...");
-            await populateCache();
+        let teamCache = await loadCache(); // Load cache from file
+        if (!teamCache) {
+            console.log("Cache is empty or stale, populating...");
+            await populateCache(); // Populate cache if empty/stale
+            teamCache = await loadCache(); // Load it again after populating
         }
 
         // Return data from cache if available
-        if (teamCache[year] && teamCache[year][teamNumber]) {
+        if (teamCache && teamCache[year] && teamCache[year][teamNumber]) {
             return teamCache[year][teamNumber];
         } else {
             console.log("Team not found in cache");
