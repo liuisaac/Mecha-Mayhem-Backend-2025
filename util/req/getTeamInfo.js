@@ -1,9 +1,5 @@
 const fs = require("fs").promises; // Using fs.promises for async file operations
 const path = require("path");
-const apiKey = process.env.ROBOTEVENTS_API_KEY;
-const admin = require("firebase-admin");
-const { db } = require("../../config/firebaseConfig");
-const { default: axios } = require("axios");
 const { concPagination } = require("./concPagination");
 const { yearToKeyMap } = require("../maps");
 const { transformTeams } = require("../transformers/transformTeams");

@@ -4,7 +4,7 @@ const dotenv = require('dotenv');
 dotenv.config({ path: './.env' });
 
 // FIREBASE INIT
-const { db } = require('./config/firebaseConfig');
+require('./config/firebaseConfig');
 
 const allowedOrigins = [
   'https://mecha-mayhem-frontend-1crs5fdcj-isaacs-projects-0e7865f8.vercel.app',

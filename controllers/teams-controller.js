@@ -1,11 +1,7 @@
 const { transformMatches } = require("../util/transformers/transformMatches");
-const { calcOPR } = require("../util/calc/OPR/calcOPR");
-const admin = require("firebase-admin");
-const { db } = require("../config/firebaseConfig");
-const { concPagination } = require("../util/req/concPagination");
 const { yearToKeyMap, gradeToKeyMap, divToKeyMap } = require("../util/maps");
 const { getAllTeamsData, getTeamInfo } = require("../util/req/getTeamInfo");
-
+const { requestRobotEvents } = require("../util/req/requestRobotEvents");
 
 // route to retrieve team information for a season
 const getInfo = async (req, res) => {
@@ -18,8 +14,9 @@ const getInfo = async (req, res) => {
         const response = requestRobotEvents(
             `https://www.robotevents.com/api/v2/teams?number%5B%5D=${teamNumber}${gradeToKeyMap[grade]}`
         );
-        const data = response.data.data[0];
 
+        const data = (await response).data.data[0];
+        
         if (data !== undefined) {
             const team_id = data.id;
             const team_name = data.team_name;

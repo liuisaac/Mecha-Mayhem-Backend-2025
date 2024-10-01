@@ -6,6 +6,3 @@ admin.initializeApp({
   storageBucket: 'gs://mecha-mayhem-2024.appspot.com',
 });
 
-const db = admin.firestore();
-
-module.exports = { db }; 
