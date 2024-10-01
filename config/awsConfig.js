@@ -7,7 +7,7 @@ const AWS = require('aws-sdk');
 AWS.config.update({
   accessKeyId: process.env.AWS_ACCESS_KEY_ID,     // Load from .env
   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY, // Load from .env
-  region: process.env.AWS_REGION                  // Load from .env
+  region: "us-east-2"              // Load from .env
 });
 
 // Create an S3 instance
